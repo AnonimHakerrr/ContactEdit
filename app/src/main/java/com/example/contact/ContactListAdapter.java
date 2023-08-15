@@ -1,52 +1,80 @@
 package com.example.contact;
 
-import android.content.Context;
+import android.annotation.SuppressLint;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.BaseAdapter;
 import android.widget.TextView;
-
+import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.RecyclerView;
 import java.util.List;
 
-public class ContactListAdapter extends BaseAdapter {
+class ContactAdapter extends RecyclerView.Adapter<ContactAdapter.ContactViewHolder> {
 
-    private Context context;
     private List<Contact> contacts;
 
-    public ContactListAdapter(Context context, List<Contact> contacts) {
-        this.context = context;
+    public ContactAdapter(List<Contact> contacts) {
         this.contacts = contacts;
     }
 
+    @NonNull
     @Override
-    public int getCount() {
+    public ContactViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.contact_item, parent, false);
+        return new ContactViewHolder(view);
+    }
+
+    @Override
+    public void onBindViewHolder(@NonNull ContactViewHolder holder, @SuppressLint("RecyclerView") int position) {
+        Contact contact = contacts.get(position);
+        holder.firstNameTextView.setText(contact.getFirstName());
+        holder.lastNameTextView.setText(contact.getLastName());
+
+        holder.itemView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (listener != null) {
+                    listener.onItemClick(position);
+                }
+            }
+        });
+    }
+
+
+    @Override
+    public int getItemCount() {
         return contacts.size();
     }
 
-    @Override
-    public Object getItem(int position) {
+    public void removeContact(int position) {
+        Contact removedContact = contacts.get(position);
+        ContactDB.getInstance().removeContact(position);
+        notifyDataSetChanged();
+    }
+
+    static class ContactViewHolder extends RecyclerView.ViewHolder {
+
+        private TextView firstNameTextView;
+        private TextView lastNameTextView;
+
+        public ContactViewHolder(@NonNull View itemView) {
+            super(itemView);
+            firstNameTextView = itemView.findViewById(R.id.firstNameTextView);
+            lastNameTextView = itemView.findViewById(R.id.lastNameTextView);
+        }
+    }
+    public Contact getContact(int position) {
         return contacts.get(position);
     }
-
-    @Override
-    public long getItemId(int position) {
-        return position;
+    public interface OnItemClickListener {
+        void onItemClick(int position);
     }
 
-    @Override
-    public View getView(int position, View convertView, ViewGroup parent) {
-        if (convertView == null) {
-            convertView = LayoutInflater.from(context).inflate(R.layout.contact_item, parent, false);
-        }
+    private OnItemClickListener listener;
 
-        TextView nameTextView = convertView.findViewById(R.id.nameTextView);
-        TextView phoneTextView = convertView.findViewById(R.id.phoneTextView);
-
-        Contact contact = contacts.get(position);
-        nameTextView.setText(contact.getFullName());
-        phoneTextView.setText(contact.getPhoneNumber());
-
-        return convertView;
+    public void setOnItemClickListener(OnItemClickListener listener) {
+        this.listener = listener;
     }
+
+
 }
